@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">MediaPlayer003</string>
+    <string name="play">再生</string>
+    <string name="pause">一時停止</string>
+    <string name="STOP">停止</string>
+    <string name="loopOn">LoopOn</string>
 </resources>
