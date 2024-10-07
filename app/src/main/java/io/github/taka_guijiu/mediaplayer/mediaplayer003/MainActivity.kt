@@ -1,4 +1,8 @@
 package io.github.taka_guijiu.mediaplayer.mediaplayer003
+// 参考資料
+// 斎藤著「Androidアプリ開発の教科書Kotlin対応　第12章
+
+
 
 import android.app.Activity
 import android.content.Intent
@@ -10,6 +14,7 @@ import android.view.MenuItem
 import android.widget.Button
 import android.widget.CompoundButton
 import android.widget.Switch
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
@@ -23,6 +28,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var btnPlay: Button
     lateinit var btnStop: Button
     lateinit var swLoopOn: Switch
+    lateinit var tvCurPos: TextView
 
     val getContentSound =
         registerForActivityResult(StartActivityForResult()) {
@@ -76,6 +82,7 @@ class MainActivity : AppCompatActivity() {
         btnPlay = findViewById<Button>(R.id.btnPlay)
         btnStop = findViewById<Button>(R.id.btnStop)
         swLoopOn = findViewById<Switch>(R.id.swLoop)
+        tvCurPos = findViewById<TextView>(R.id.tvCurPos)
 
         btnPlay.setOnClickListener {
             if (!mediaPlayer.isPlaying) {
@@ -88,6 +95,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 try {
                     // 再生を一時停止
+                    tvCurPos.text = mediaPlayer.currentPosition.toString()  // 一時停止した時にcurrentPosition(ミリ秒)を表示する
                     mediaPlayer.pause()
                 } catch (e: IllegalStateException) {
                     e.printStackTrace()
@@ -98,11 +106,11 @@ class MainActivity : AppCompatActivity() {
 
         btnStop.setOnClickListener {
             try {
+                tvCurPos.text = mediaPlayer.currentPosition.toString()
                 mediaPlayer.stop()
                 mediaPlayer.prepare()
             } catch (e: IllegalStateException) {
                 e.printStackTrace()
-
             } catch (e: IOException) {
                 e.printStackTrace()
             }
@@ -120,10 +128,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )
-
-
-
-
     }
 
 
@@ -152,7 +156,7 @@ class MainActivity : AppCompatActivity() {
         // 選択されたメニューのIDのR値による処理分岐
         when (item.itemId) {
             R.id.openSoundFolder -> {
-                // ファイルピッカーを呼び出す
+                // 暗黙インテントにより既成のファイルピッカーを呼び出す
                 val iSound = Intent(Intent.ACTION_OPEN_DOCUMENT)
                 iSound.type = "audio/mpeg"
                 iSound.putExtra(Intent.EXTRA_TITLE, "memo.mp3")
