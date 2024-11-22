@@ -6,8 +6,10 @@ package io.github.taka_guijiu.mediaplayer.mediaplayer003
 
 import android.app.Activity
 import android.content.Intent
+import android.icu.util.Calendar
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -15,12 +17,12 @@ import android.widget.Button
 import android.widget.CompoundButton
 import android.widget.Switch
 import android.widget.TextView
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.core.os.HandlerCompat
 import java.io.IOException
+import kotlin.concurrent.timer
 
 class MainActivity : AppCompatActivity() {
 
@@ -50,8 +52,6 @@ class MainActivity : AppCompatActivity() {
                             btnPlay.setEnabled(true)
                             btnPlay.text = getString(R.string.play)
                             btnStop.setEnabled(true)
-//                                btnBack.setEnabled(true)
-//                                btnForward.setEnabled(true)
                         }
 
                         // 再生中にメディアソースの終端に到達したときに呼び出されるコールバックを登録
@@ -68,7 +68,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-
+    @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 //        enableEdgeToEdge()
@@ -95,7 +95,6 @@ class MainActivity : AppCompatActivity() {
             } else {
                 try {
                     // 再生を一時停止
-                    tvCurPos.text = mediaPlayer.currentPosition.toString()  // 一時停止した時にcurrentPosition(ミリ秒)を表示する
                     mediaPlayer.pause()
                 } catch (e: IllegalStateException) {
                     e.printStackTrace()
@@ -106,7 +105,7 @@ class MainActivity : AppCompatActivity() {
 
         btnStop.setOnClickListener {
             try {
-                tvCurPos.text = mediaPlayer.currentPosition.toString()
+                //tvCurPos.text = "CurPos:" + mediaPlayer.currentPosition.toString()
                 mediaPlayer.stop()
                 mediaPlayer.prepare()
             } catch (e: IllegalStateException) {
@@ -128,6 +127,28 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )
+
+        /* 現在時刻を表示する
+            参考：https://qiita.com/kenichiro-yamato/items/161b43d152f32a3248c7
+                 https://www.project-unknown.jp/entry/2018/10/09/015515
+         */
+        timer(name = "testTimer", period = 1000) {
+            val calendar = Calendar.getInstance()
+            val hour = calendar.get(Calendar.HOUR_OF_DAY)
+            val minute = calendar.get(Calendar.MINUTE)
+            val second = calendar.get(Calendar.SECOND)
+            HandlerCompat.createAsync(mainLooper).post {
+                val tvClock = findViewById<TextView>(R.id.tvClock)
+                tvClock.text = "時刻：${hour}時 ${minute}分 ${second}秒"
+            }
+        }
+
+        // 再生経過時間を表示する
+        timer("curPos", period = 1000L){
+            HandlerCompat.createAsync(mainLooper).post{
+                tvCurPos.text = "再生経過時間:" + convertMillisTo60(mediaPlayer.currentPosition)  // 一時停止した時にcurrentPosition(ミリ秒)を60進数に変換し表示する
+            }
+        }
     }
 
 
@@ -164,6 +185,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    // ミリ秒ー＞60進数変換
+    // https://pisuke-code.com/android-ways-to-format-millis/
+    fun convertMillisTo60(millis: Int): String? {
+        val l = millis % 1000
+        val s = millis / 1000 % 60
+        val m = millis / 1000 / 60 % 60
+        var h = millis / 1000 / (60 * 60) % 24
+        h += millis / 1000 / (60 * 60 * 24) * 24
+        return String.format("%d:%02d:%02d.%02d", h, m, s, l)
     }
 
 
